@@ -1,0 +1,32 @@
+#cloud-config for virtual machines.
+
+package_upgrade: true
+
+packages:
+  - ufw
+  - chrony
+  - fail2ban
+
+write_files:
+  - content: |
+      #!/bin/sh
+      sudo ufw allow 22/tcp
+      sudo ufw enable
+    path: /tmp/configure_firewall.sh
+    permissions: '0755'
+
+  - content: |
+      [sshd]
+      enabled = true
+      port = ssh
+      filter = sshd
+      logpath = /var/log/auth.log
+      maxretry = 3
+    path: /etc/fail2ban/jail.d/sshd.conf
+
+runcmd:
+  - /tmp/configure_firewall.sh
+  - sudo systemctl enable chrony
+  - sudo systemctl start chrony
+  - sudo systemctl enable fail2ban
+  - sudo systemctl start fail2ban

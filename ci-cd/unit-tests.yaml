@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: unit-tests-
+spec:
+  entrypoint: unit-tests
+  templates:
+    - name: unit-tests
+      container:
+        image: alpine:latest
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            set -e
+            cd /src
+            terraform init
+            terraform validate
+            terraform fmt -check
+      volumeMounts:
+        - name: terraform-tfstate
+          mountPath: /src/.terraform/
+        - name: terraform-tfstate
+          mountPath: /src/terraform.tfstate.d/
