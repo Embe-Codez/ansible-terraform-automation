@@ -1,4 +1,4 @@
-# Automating Infrastructure
+# Automating Application & Infrastructure Deployment
 
 I originally created this project to only automate the provisioning of infrastructure with Terraform, but have decided to continue adding to this project by incorporating Ansible for configuration management and possibly deploying a basic web app via Docker.
 
