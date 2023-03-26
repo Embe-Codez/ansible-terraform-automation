@@ -1,0 +1,23 @@
+- name: Create DNS records in Cloudflare
+  uri:
+    url: "https://api.cloudflare.com/client/v4/zones/{{ cloudflare_zone_id }}/dns_records"
+    method: POST
+    body_format: json
+    headers:
+      Authorization: "Bearer {{ cloudflare_api_key }}"
+      Content-Type: "application/json"
+    body:
+      type: A
+      name: "{{ item.name }}"
+      content: "{{ item.ip }}"
+      ttl: 1
+  register: response
+  loop:
+    - { name: "vm1.example.com", ip: "10.0.1.40" }
+    - { name: "vm2.example.com", ip: "10.0.1.50" }
+    - { name: "vm3.example.com", ip: "10.1.2.40" }
+    - { name: "vm4.example.com", ip: "10.1.2.50" }
+
+- name: Print API response
+  debug:
+    var: response.json

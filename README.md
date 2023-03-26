@@ -44,6 +44,29 @@ Variables
 * var.security_rule: The security rule for the virtual network. Default is "allow_ssh".
 * var.private_ip: The private IP address for the virtual machines. Default is ["10.0.1.4", "10.0.1.5"].
 
+## Ansible
+
+An Ansible playbook is used to deploy the following services to the virtual machines that were provisioned with Terraform. Ansible uses an inventory file to organize how these services will be deployed to their respective hosts.
+
+    The following services are deployed:
+
+* Cloudflare for DNS.
+* Let's Encrypt for SSL certificates.
+* NGINX for a reverse proxy/
+* Node.js for the frontend and backend.
+
+    Ansible inventory:
+
+The following inventory structure is used to deploy NGINX and Node.js in a logically to their respective hosts:
+
+* [nginx_servers]
+     * vm1
+     * vm2
+
+* [nodejs_servers]
+     * vm3
+     * vm4
+
 ## CI/CD Workflow
 
 Continuous Integration and Continuous Deployment

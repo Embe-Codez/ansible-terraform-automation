@@ -1,0 +1,13 @@
+---
+# Common variables
+cloudflare_api_key: 'my_cloudflare_api_key'
+cloudflare_email: 'my_email'
+cloudflare_zone_id: 'my_zone_id'
+letsencrypt_email: 'my_email'
+letsencrypt_staging: false
+
+# NGINX variables
+nginx_port: '80, 443'
+
+# Node.js variables
+nodejs_port: 3000

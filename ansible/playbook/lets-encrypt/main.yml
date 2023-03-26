@@ -1,0 +1,19 @@
+- name: Install certbot client
+  ansible.builtin.package:
+    name: certbot
+    state: present
+
+- name: Obtain SSL/TLS certificate
+  ansible.builtin.command: certbot certonly --webroot -w /var/www/html -d example.com -d www.example.com
+
+- name: Configure NGINX for HTTPS
+  ansible.builtin.template:
+    src: templates/nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart nginx
+
+- name: Renew SSL/TLS certificate
+  ansible.builtin.command: certbot renew --dry-run

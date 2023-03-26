@@ -9,7 +9,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
   custom_data           = filebase64("cloud-init.yml")
   
   admin_ssh_key {
-    username   = sensitive("admin")
+    username   = sensitive("linux-user")
     public_key = var.admin_ssh_key
   }
 
