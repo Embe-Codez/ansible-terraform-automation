@@ -1,0 +1,42 @@
+name: Terraform CI
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Terraform
+        run: |
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+          sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+          sudo apt-get update && sudo apt-get install terraform=1.4.2
+
+      - name: Configure Terraform backend
+        run: |
+          cd terraform/environments/$(echo $GITHUB_REF | cut -d'/' -f3)
+          terraform init -backend-config="key=${GITHUB_REF#refs/heads/}.tfstate"
+
+      - name: Validate Terraform code
+        run: |
+          cd terraform/environments/$(echo $GITHUB_REF | cut -d'/' -f3)
+          terraform validate
+
+      - name: Generate Terraform plan
+        run: |
+          cd terraform/environments/$(echo $GITHUB_REF | cut -d'/' -f3)
+          terraform plan -out=tfplan -input=false
+
+      - name: Deploy Terraform
+        run: |
+          cd terraform/environments/$(echo $GITHUB_REF | cut -d'/' -f3)
+          terraform apply -input=false -auto-approve tfplan

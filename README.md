@@ -57,7 +57,7 @@ An Ansible playbook is used to deploy the following services to the virtual mach
 
     Ansible inventory:
 
-The following inventory structure is used to deploy NGINX and Node.js in a logically to their respective hosts:
+    The following inventory structure is used to deploy NGINX and Node.js in a logically to their respective hosts:
 
 * [nginx_servers]
      * vm1

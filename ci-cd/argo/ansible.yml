@@ -1,0 +1,90 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  name: deploy-ansible
+spec:
+  entrypoint: deploy-ansible
+  templates:
+    - name: deploy-ansible
+      steps:
+        - - name: ansible-dev
+            template: ansible-playbook
+            arguments:
+              parameters:
+                playbook: "{{inputs.parameters.playbook}}"
+                inventory: dev
+        - - name: test-dev
+            template: test
+            arguments:
+              parameters:
+                env: dev
+        - - name: ansible-uat
+            template: ansible-playbook
+            arguments:
+              parameters:
+                playbook: "{{inputs.parameters.playbook}}"
+                inventory: uat
+        - - name: test-uat
+            template: test
+            arguments:
+              parameters:
+                env: uat
+        - - name: ansible-prod
+            template: ansible-playbook
+            arguments:
+              parameters:
+                playbook: "{{inputs.parameters.playbook}}"
+                inventory: prod
+        - - name: test-prod
+            template: test
+            arguments:
+              parameters:
+                env: prod
+      volumes:
+        - name: ansible-playbook
+          configMap:
+            name: ansible-playbook-configmap
+        - name: ansible-secrets
+          secret:
+            secretName: ansible-secrets
+    - name: ansible-playbook
+      container:
+        image: ansible/ansible-runner:6.4.0
+        command:
+          - ansible-playbook
+        args:
+          - "{{inputs.parameters.playbook}}"
+          - "-i"
+          - "/ansible/inventory/{{inputs.parameters.inventory}}"
+          - "--vault-id"
+          - /ansible-secrets/vault-pass
+        volumeMounts:
+          - name: ansible-playbook
+            mountPath: /ansible
+          - name: ansible-secrets
+            mountPath: /ansible-secrets
+      inputs:
+        parameters:
+          - name: playbook
+          - name: inventory
+    - name: test
+      container:
+        image: ansible/ansible-runner:2.4.4
+        command:
+          - ansible-playbook
+        args:
+          - "{{inputs.parameters.playbook}}"
+          - "-i"
+          - "/ansible/inventory/{{inputs.parameters.env}}"
+          - "--vault-id"
+          - /ansible-secrets/vault-pass
+          - "--check"
+        volumeMounts:
+          - name: ansible-playbook
+            mountPath: /ansible
+          - name: ansible-secrets
+            mountPath: /ansible-secrets
+      inputs:
+        parameters:
+          - name: playbook
+          - name: env
