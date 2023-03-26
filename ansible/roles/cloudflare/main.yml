@@ -1,4 +1,5 @@
 - name: Create DNS records in Cloudflare
+  hosts: all
   uri:
     url: "https://api.cloudflare.com/client/v4/zones/{{ cloudflare_zone_id }}/dns_records"
     method: POST

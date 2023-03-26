@@ -1,4 +1,5 @@
 - name: Install certbot client
+  hosts: all
   ansible.builtin.package:
     name: certbot
     state: present
