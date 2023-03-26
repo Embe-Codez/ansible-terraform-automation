@@ -1,0 +1,40 @@
+- name: Deploy NGINX in Docker container
+  hosts: nginx_servers
+  become: true
+
+  vars:
+    nginx_port: "80, 443"
+    docker_image: nginx:latest
+    container_name: nginx
+    container_state: started
+
+  tasks:
+    - name: Start NGINX container
+      docker_container:
+        name: "{{ container_name }}"
+        image: "{{ docker_image }}"
+        state: "{{ container_state }}"
+        env:
+          - VIRTUAL_HOST=my-nginx.example.com
+          - VIRTUAL_PORT={{ nginx_port }}
+        ports:
+          - "{{ nginx_port }}:{{ nginx_port }}"
+        volumes:
+          - /etc/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+          - /var/log/nginx/
+        restart_policy: always
+
+    - name: Copy NGINX config file to container
+      ansible.builtin.copy:
+        src: files/nginx.conf
+        dest: /etc/nginx/conf.d/default.conf
+        mode: '0644'
+        owner: root
+        group: root
+      notify: restart nginx
+
+  handlers:
+    - name: restart nginx
+      docker_container:
+        name: "{{ container_name }}"
+        state: restarted

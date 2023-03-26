@@ -7,13 +7,41 @@ packages:
   - chrony
   - fail2ban
 
+users:
+  - name: ansible-man
+    ssh-authorized-keys:
+      - ${var.admin_ssh_key}
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: sudo
+    shell: /bin/bash
+
+  - content: |
+      # Disable root login
+      PermitRootLogin no
+      
+      # Disable password login
+      PasswordAuthentication no
+    path: /etc/ssh/sshd_config
+    permissions: '0644'
+    owner: root
+    group: root
+
 write_files:
   - content: |
       #!/bin/sh
       sudo ufw allow 22/tcp
+      sudo ufw allow 80/tcp
+      sudo ufw allow 443/tcp
       sudo ufw enable
     path: /tmp/configure_firewall.sh
     permissions: '0755'
+
+  - name: Disable IPv6
+    ansible.builtin.sysctl:
+      name: net.ipv6.conf.all.disable_ipv6
+      value: 1
+      state: present
+      reload: yes
 
   - content: |
       [sshd]
@@ -23,6 +51,14 @@ write_files:
       logpath = /var/log/auth.log
       maxretry = 3
     path: /etc/fail2ban/jail.d/sshd.conf
+
+  - content: |
+      * soft nofile 64000
+      * hard nofile 64000
+    path: /etc/security/limits.conf
+    owner: root
+    group: root
+    permissions: '0644'
 
 runcmd:
   - /tmp/configure_firewall.sh
