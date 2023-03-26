@@ -12,5 +12,5 @@
   roles:
     - cloudflare
     - lets-encrypt
-    - NGINX
+    - nginx
     - nodejs
