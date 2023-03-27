@@ -67,7 +67,7 @@ An Ansible playbook is used to deploy the following services to the virtual mach
      * vm3
      * vm4
 
-## CI/CD Workflow
+## CI/CD Workflow: /.github/workflows/pipeline.yml
 
 The GitHub Actions workflow for continuous integration and deployment is triggered on every pull request and on every push to the main branch. The workflow includes the following steps:
 
