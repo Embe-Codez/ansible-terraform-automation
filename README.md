@@ -55,7 +55,7 @@ An Ansible playbook is used to deploy the following services to the virtual mach
 * NGINX for a reverse proxy/
 * Node.js for the frontend and backend.
 
-    Ansible inventory:
+### Ansible inventory:
 
     The following inventory structure is used to deploy NGINX and Node.js in a logically to their respective hosts:
 
@@ -69,30 +69,44 @@ An Ansible playbook is used to deploy the following services to the virtual mach
 
 ## CI/CD Workflow
 
-Continuous Integration and Continuous Deployment
+The GitHub Actions workflow for continuous integration and deployment is triggered on every pull request and on every push to the main branch. The workflow includes the following steps:
 
-We use GitHub Actions for continuous integration and Argo for continuous deployment. The pipeline tests for functionality, validates that secrets are valid, and includes error handling.
+### Terraform CI
 
-### GitHub Actions
+    Install Terraform.
+    Initialize the Terraform backend.
+    Validate the Terraform code syntax.
+    Format the Terraform code using terraform fmt.
+    Install any required Terraform plugins.
+    Plan the Terraform infrastructure changes and store the plan in a file.
+    Verify that required secrets are set.
+    Upload the plan file as an artifact.
 
-The GitHub Actions workflow for continuous integration is triggered on every pull request and on every push to the main branch. The workflow includes the following steps:
+### Terraform CD
 
-* Install Terraform and Terragrunt.
-* Validate the Terraform code syntax.
-* Format the Terraform code using terraform fmt.
-* Install any required Terraform plugins.
-* Initialize the Terraform backend.
-* Plan the Terraform infrastructure changes and store the plan in a file.
-* Verify that required secrets are set.
-* Upload the plan file as an artifact.
+    Wait for approval from the development team.
+    Apply the Terraform plan to the development environment.
+    Wait for approval from the development team.
+    Apply the Terraform plan to the user acceptance testing (UAT) environment.
+    Wait for approval from the development team.
+    Apply the Terraform plan to the production environment.
 
-### Argo Workflow
+### Ansible CI
 
-The Argo workflow for continuous deployment is triggered when a new artifact is uploaded by the GitHub Actions workflow. The workflow includes the following steps:
+    Install Ansible.
+    Validate the Ansible playbook syntax.
+    Check that Ansible playbook runs without changing anything.
 
-* Deploy the Terraform infrastructure using the plan file uploaded by the GitHub Actions workflow.
-* Verify that the infrastructure was deployed successfully.
-* end a notification to a Slack channel when the deployment is successful.
+### Ansible CD
+
+    Wait for approval from the development team.
+    Apply the Ansible playbook to the development environment.
+    Wait for approval from the development team.
+    Apply the Ansible playbook to the user acceptance testing (UAT) environment.
+    Wait for approval from the development team.
+    Apply the Ansible playbook to the production environment.
+
+Note: In the Terraform CD and Ansible CD steps, approval can be granted through a GitHub pull request review or by commenting on the pull request.
 
 ## Usage
 

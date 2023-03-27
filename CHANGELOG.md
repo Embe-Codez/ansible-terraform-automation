@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.3 (2023-03-26)
+### Added:
+* Created CI / CD pipelines for Ansible and Terraform each.
+
+### Changed:
+* Updated README.md file to reflect pipeline configuration.
+
+### Removed:
+* Removed Argo CD pipeline for Ansible and Terraform each.
+
 ## 1.0.2 (2023-03-26)
 ### Added:
 * Ansible playbook for virtual machine configuration to:

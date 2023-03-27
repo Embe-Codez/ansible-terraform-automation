@@ -1,0 +1,137 @@
+# 1. Code Validation: Checkout the code and validate the Ansible playbooks using ansible-playbook command.
+# 2. Deploy to Dev Environment: If code validation passes and the push is made to the develop branch, Ansible is used to deploy the updated application to the development environment.
+# 3. Create Approval Check for UAT Deployment: A check is created for the UAT deployment using create-check action from Github Actions. This check needs to be approved before deployment to the UAT environment.
+# 4. Deploy to UAT Environment: After the check is approved, the updated application is deployed to the UAT environment using Ansible.
+# 5. Create Approval Check for Prod Deployment: A check is created for the production deployment using create-check action from Github Actions. This check needs to be approved before deployment to the production environment.
+# 6. Deploy to Prod Environment: After the check is approved, the updated application is deployed to the production environment using Ansible.
+
+name: Ansible CI/CD
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Ansible
+        run: |
+          sudo apt update
+          sudo apt install software-properties-common -y
+          sudo apt-add-repository --yes --update ppa:ansible/ansible-6.4.0
+          sudo apt install ansible=2.10.* -y
+
+      - name: Configure Ansible
+        run: |
+          echo "[servers]" > ansible/inventory/hosts
+          echo "localhost ansible_connection=local" >> ansible/inventory/hosts
+
+      - name: Validate Ansible playbooks
+        run: |
+          ansible-playbook ansible/playbooks/site.yml -i ansible/inventory/hosts --syntax-check
+          ansible-playbook ansible/playbooks/site.yml -i ansible/inventory/hosts --check
+
+  deploy_dev:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Ansible
+        run: |
+          sudo apt update
+          sudo apt install software-properties-common -y
+          sudo apt-add-repository --yes --update ppa:ansible/ansible-6.4.0
+          sudo apt install ansible=6.4.0 -y
+
+      - name: Configure Ansible
+        run: |
+          echo "[servers]" > ansible/inventory.ini
+          echo "<dev_target_host>" >> ansible/inventory.ini
+          echo "[all:vars]" >> ansible/inventory.ini
+          echo "ansible_user=ansible-man" >> ansible/inventory.ini
+
+      - name: Deploy to dev
+        run: |
+          ansible-playbook ansible/playbooks/site.yml -i ansible/inventory.ini
+
+      - name: Create uat-deploy check
+        uses: peter-evans/create-check@v1.5.0
+        id: uat-deploy
+        with:
+          name: UAT deployment
+          conclusion: neutral
+
+  deploy_uat:
+    runs-on: ubuntu-latest
+    needs: deploy_dev
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'uat'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Ansible
+        run: |
+          sudo apt update
+          sudo apt install software-properties-common -y
+          sudo apt-add-repository --yes --update ppa:ansible/ansible-6.4.0
+          sudo apt install ansible=6.4.0 -y
+
+      - name: Configure Ansible
+        run: |
+          echo "[servers]" > ansible/inventory.ini
+          echo "<uat_target_host>" >> ansible/inventory.ini
+          echo "[all:vars]" >> ansible/inventory.ini
+          echo "ansible_user=ansible-man" >> ansible/inventory.ini
+
+      - name: Wait for approval
+        uses: peter-evans/wait-for-approval@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          checks: 'uat-deploy'
+
+      - name: Deploy to uat
+        run: |
+          ansible-playbook ansible/playbooks/site.yml -i
+
+  deploy_prod:
+      runs-on: ubuntu-latest
+      needs: deploy_uat
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod'
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v2
+
+        - name: Install Ansible
+          run: |
+            sudo apt update
+            sudo apt install software-properties-common -y
+            sudo apt-add-repository --yes --update ppa:ansible/ansible-6.4.0
+            sudo apt install ansible=6.4.0 -y
+
+        - name: Configure Ansible
+          run: |
+            echo "[servers]" > ansible/inventory.ini
+            echo "<prod_target_host>" >> ansible/inventory.ini
+            echo "[all:vars]" >> ansible/inventory.ini
+            echo "ansible_user=ansible-man" >> ansible/inventory.ini
+
+        - name: Wait for approval
+          uses: peter-evans/wait-for-approval@v2
+          with:
+            github-token: ${{ secrets.GITHUB_TOKEN }}
+            checks: 'prod-deploy'
+
+        - name: Deploy to prod
+          run: |
+            ansible-playbook ansible/playbooks/site.yml -i ansible/inventory.ini
