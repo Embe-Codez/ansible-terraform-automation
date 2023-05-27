@@ -2,15 +2,11 @@
   hosts: all
   become: true
 
-  vars:
-    cloudflare_zone_id: "my_cloudflare_zone_id"
-    cloudflare_api_key: "my_cloudflare_api_key"
-    letsencrypt_email: "my_email@example.com"
-    nginx_port: 80
-    nginx_ssl_port: 443
+  vars_files:
+    - variables.yml
 
   roles:
-    - cloudflare
-    - lets-encrypt
-    - nginx
-    - nodejs
+    - role: cloudflare
+    - role: lets-encrypt
+    - role: nginx
+    - role: nodejs

@@ -2,13 +2,6 @@
   hosts: nodejs_servers
   become: true
 
-  vars:
-    app_name: myapp
-    app_path: /var/www/{{ app_name }}
-    app_repo: https://github.com/myusername/myapp.git
-    app_branch: master
-    node_version: 16.x
-
   tasks:
     - name: Install Node.js and NPM
       block:
@@ -18,6 +11,7 @@
               - curl
               - gnupg
             update_cache: yes
+
         - name: Install Node.js
           ansible.builtin.apt_key:
             url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key

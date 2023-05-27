@@ -1,21 +1,12 @@
-# 1. Code Validation: Checkout the code and validate the Terraform code using terraform validate command.
-# 2. Configure Backend: Initialize the Terraform backend using terraform init command and configure the backend to store the state file in a cloud storage provider like S3.
-# 3. Generate Terraform Plan: Generate the Terraform plan using terraform plan command, which shows the changes to be made to the infrastructure.
-# 4. Deploy to Dev Environment: If code validation passes and the push is made to the develop branch, Terraform is used to apply the changes to the development environment.
-# 5. Create Approval Check for UAT Deployment: A check is created for the UAT deployment using create-check action from Github Actions. This check needs to be approved before deployment to the UAT environment.
-# 6. Deploy to UAT Environment: After the check is approved, Terraform is used to apply the changes to the UAT environment.
-# 7. Create Approval Check for Prod Deployment: A check is created for the production deployment using create-check action from Github Actions. This check needs to be approved before deployment to the production environment.
-# 8. Deploy to Prod Environment: After the check is approved, Terraform is used to apply the changes to the production environment.
-
 name: Terraform CI/CD
 
 on:
   push:
     branches:
-      - develop
+      - main
   pull_request:
     branches:
-      - develop
+      - main
 
 jobs:
   build:
@@ -45,118 +36,21 @@ jobs:
           cd terraform/environments/$(echo $GITHUB_REF | cut -d'/' -f3)
           terraform plan -out=tfplan -input=false
 
-  deploy_dev:
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Install Terraform
+      - name: Create artifact
         run: |
-          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-          sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-          sudo apt-get update && sudo apt-get install terraform=1.4.2
+          mkdir artifacts
+          cp -r terraform/environments/$(echo $GITHUB_REF | cut -d'/' -f3) artifacts/
+        working-directory: ${{ github.workspace }}
 
-      - name: Configure Terraform backend
-        run: |
-          cd terraform/environments/dev
-          terraform init -backend-config="key=dev.tfstate"
-
-      - name: Wait for approval
-        uses: peter-evans/wait-for-approval@v2
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          checks: 'dev-deploy'
+          name: terraform-artifact
+          path: artifacts/
 
       - name: Deploy to dev
         run: |
-          cd terraform/environments/dev
-          terraform apply -input=false -auto-approve tfplan
-
-      - name: Create uat-deploy check
-        uses: peter-evans/create-check@v1.5.0
-        id: uat-deploy
-        with:
-          name: UAT deployment
-          conclusion: neutral
-
-  deploy_uat:
-    runs-on: ubuntu-latest
-    needs: deploy_dev
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'uat'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Install Terraform
-        run: |
-          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-          sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-
-      - name: Configure Terraform backend
-        run: |
-          cd terraform/environments/prod
-          terraform init -backend-config="key=prod.tfstate"
-
-      - name: Validate Terraform code
-        run: |
-          cd terraform/environments/prod
-          terraform validate
-
-      - name: Generate Terraform plan
-        run: |
-          cd terraform/environments/prod
-          terraform plan -out=tfplan -input=false
-
-      - name: Wait for approval
-        uses: peter-evans/wait-for-approval@v2
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          checks: 'prod-deploy'
-
-      - name: Deploy Terraform
-        run: |
-          cd terraform/environments/prod
-          terraform apply -input=false -auto-approve tfplan
-         
-  deploy_prod:
-    runs-on: ubuntu-latest
-    needs: deploy_uat
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Install Terraform
-        run: |
-          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-          sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-          sudo apt-get update && sudo apt-get install terraform=1.4.2
-
-      - name: Configure Terraform backend
-        run: |
-          cd terraform/environments/prod
-          terraform init -backend-config="key=prod.tfstate"
-
-      - name: Validate Terraform code
-        run: |
-          cd terraform/environments/prod
-          terraform validate
-
-      - name: Generate Terraform plan
-        run: |
-          cd terraform/environments/prod
-          terraform plan -out=tfplan -input=false
-
-      - name: Wait for approval
-        uses: peter-evans/wait-for-approval@v2
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          checks: 'prod-deploy'
-
-      - name: Deploy Terraform
-        run: |
-          cd terraform/environments/prod
-          terraform apply -input=false -auto-approve tfplan
+            mkdir terraform_artifact
+            tar -xf ${{ needs.build.outputs.artifact_path }} -C terraform_artifact
+            cd terraform_artifact/terraform/environments/dev
+            terraform apply -input=false -auto-approve tfplan

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.4 (2023-05-27)
+### Added:
+* Cleaned up Ansible roles.
+* Cleaned up Github Actions pipelines.
+* Updated README.md.
+
 ## 1.0.3 (2023-03-26)
 ### Added:
 * Created CI / CD pipelines for Ansible and Terraform each.

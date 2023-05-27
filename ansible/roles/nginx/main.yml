@@ -2,12 +2,6 @@
   hosts: nginx_servers
   become: true
 
-  vars:
-    nginx_port: "80, 443"
-    docker_image: nginx:latest
-    container_name: nginx
-    container_state: started
-
   tasks:
     - name: Start NGINX container
       docker_container:
@@ -15,8 +9,8 @@
         image: "{{ docker_image }}"
         state: "{{ container_state }}"
         env:
-          - VIRTUAL_HOST=my-nginx.example.com
-          - VIRTUAL_PORT={{ nginx_port }}
+          - VIRTUAL_HOST: my-nginx.example.com
+          - VIRTUAL_PORT: "{{ nginx_port }}"
         ports:
           - "{{ nginx_port }}:{{ nginx_port }}"
         volumes:

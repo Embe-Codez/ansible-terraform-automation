@@ -1,13 +1,25 @@
----
-# Common variables
-cloudflare_api_key: 'my_cloudflare_api_key'
-cloudflare_email: 'my_email'
-cloudflare_zone_id: 'my_zone_id'
-letsencrypt_email: 'my_email'
-letsencrypt_staging: false
+# Cloudflare variables
+cloudflare_api_key: 'your_cloudflare_api_key'
+cloudflare_email: 'your_email'
+cloudflare_zone_id: 'your_zone_id'
+
+# DNS records
+dns_records:
+  - name: "vm1.example.com"
+    ip: "10.0.1.40"
+  - name: "vm2.example.com"
+    ip: "10.0.1.50"
+  - name: "vm3.example.com"
+    ip: "10.1.2.40"
+  - name: "vm4.example.com"
+    ip: "10.1.2.50"
 
 # NGINX variables
 nginx_port: '80, 443'
+
+# Let's Encrypt variables
+letsencrypt_email: 'your_email'
+letsencrypt_staging: false
 
 # Node.js variables
 nodejs_port: 3000
